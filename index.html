@@ -1,0 +1,126 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>商品视频生成对比</title>
+  <meta name="description" content="5 个商品主图在 Seedance 2.0 与 MiniMax H3 上的 5 秒视频生成效果对照。" />
+  <style>
+    :root { --border:#d9d9d9; --header:#f5f5f5; --text:#1f1f1f; --muted:#777; }
+    * { box-sizing:border-box; }
+    body { margin:0; background:#fff; color:var(--text); font-family:Arial,"PingFang SC","Microsoft YaHei",sans-serif; }
+    main { padding:24px; }
+    .table-wrap { width:100%; overflow-x:auto; }
+    table { width:100%; min-width:1240px; border-collapse:collapse; table-layout:fixed; background:#fff; }
+    caption { padding:0 0 16px; text-align:left; font-size:22px; font-weight:700; }
+    th,td { border:1px solid var(--border); padding:12px; text-align:left; vertical-align:top; }
+    thead th { position:sticky; top:0; z-index:2; background:var(--header); font-size:14px; }
+    thead th:nth-child(1) { width:190px; }
+    thead th:nth-child(2),thead th:nth-child(3),thead th:nth-child(4) { width:245px; }
+    thead th:nth-child(5) { width:360px; }
+    .product-cell { background:#fafafa; }
+    .product-cell strong { display:block; font-size:14px; line-height:1.5; }
+    .product-cell span { display:block; margin-top:8px; color:var(--muted); font-size:11px; font-weight:400; word-break:break-all; }
+    .media-cell img,.media-cell video { display:block; width:100%; aspect-ratio:420/531; object-fit:cover; background:#eee; }
+    .media-cell small { display:block; margin-top:8px; color:var(--muted); font-size:11px; }
+    .prompt-cell summary { cursor:pointer; font-size:13px; font-weight:700; }
+    .prompt-cell p { margin:12px 0 0; color:#444; font-size:12px; line-height:1.8; }
+    .error { padding:20px; color:#a00; }
+    @media (max-width:700px) { main{padding:12px;} caption{font-size:18px;padding-bottom:12px;} }
+  </style>
+</head>
+<body>
+  <main>
+    <div class="table-wrap">
+      <table>
+        <caption>商品视频生成对比</caption>
+        <thead>
+          <tr><th>商品</th><th>商品原图</th><th>Seedance 2.0</th><th>MiniMax H3</th><th>Prompt</th></tr>
+        </thead>
+        <tbody id="products"></tbody>
+      </table>
+    </div>
+  </main>
+  <script>
+    const names = ["黑白撞色小黑裙","黑白拼接 T 恤裙","条纹针织连衣裙","白色法式吊带裙","浅绿色亚麻长裙"];
+    const tbody = document.querySelector("#products");
+
+    function mediaCell(element, note) {
+      const td = document.createElement("td");
+      td.className = "media-cell";
+      td.append(element);
+      if (note) {
+        const small = document.createElement("small");
+        small.textContent = note;
+        td.append(small);
+      }
+      return td;
+    }
+
+    fetch("products.json")
+      .then((response) => {
+        if (!response.ok) throw new Error("商品数据加载失败");
+        return response.json();
+      })
+      .then((products) => products.forEach((product, index) => {
+        const row = document.createElement("tr");
+
+        const productCell = document.createElement("th");
+        productCell.className = "product-cell";
+        productCell.scope = "row";
+        const name = document.createElement("strong");
+        name.textContent = `${String(index + 1).padStart(2, "0")} · ${names[index]}`;
+        const id = document.createElement("span");
+        id.textContent = product.id;
+        productCell.append(name, id);
+
+        const image = document.createElement("img");
+        image.src = `assets/${product.id}.jpg`;
+        image.alt = `${names[index]}商品原图`;
+        image.loading = "lazy";
+
+        const seedance = document.createElement("video");
+        seedance.src = `assets/${product.id}-seedance.mp4`;
+        seedance.poster = image.src;
+        seedance.muted = true;
+        seedance.loop = true;
+        seedance.autoplay = true;
+        seedance.playsInline = true;
+        seedance.controls = true;
+        seedance.preload = "metadata";
+
+        const h3 = document.createElement("video");
+        h3.src = `assets/${product.id}-h3.mp4`;
+        h3.poster = image.src;
+        h3.muted = true;
+        h3.loop = true;
+        h3.autoplay = true;
+        h3.playsInline = true;
+        h3.controls = true;
+        h3.preload = "metadata";
+
+        const promptCell = document.createElement("td");
+        promptCell.className = "prompt-cell";
+        const details = document.createElement("details");
+        const summary = document.createElement("summary");
+        summary.textContent = "查看 Prompt";
+        const prompt = document.createElement("p");
+        prompt.textContent = product.prompt;
+        details.append(summary, prompt);
+        promptCell.append(details);
+
+        row.append(productCell, mediaCell(image), mediaCell(seedance, "5 秒 · 720p"), mediaCell(h3, "5 秒 · 768P"), promptCell);
+        tbody.append(row);
+      }))
+      .catch((error) => {
+        const row = document.createElement("tr");
+        const cell = document.createElement("td");
+        cell.colSpan = 5;
+        cell.className = "error";
+        cell.textContent = error.message;
+        row.append(cell);
+        tbody.append(row);
+      });
+  </script>
+</body>
+</html>
